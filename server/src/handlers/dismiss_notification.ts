@@ -1,15 +1,27 @@
 
+import { db } from '../db';
+import { breakNotificationsTable } from '../db/schema';
 import { type DismissNotificationInput, type BreakNotification } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const dismissNotification = async (input: DismissNotificationInput): Promise<BreakNotification> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is marking a break notification as dismissed by setting
-    // the dismissed_at timestamp to the current time.
-    return Promise.resolve({
-        id: input.id,
-        user_id: 'placeholder', // Will be fetched from DB
-        message: 'Time for a break!', // Will be fetched from DB
-        created_at: new Date(), // Will be preserved from DB
-        dismissed_at: new Date() // Set to current time when dismissed
-    } as BreakNotification);
+  try {
+    // Update the notification to set dismissed_at to current timestamp
+    const result = await db.update(breakNotificationsTable)
+      .set({
+        dismissed_at: new Date()
+      })
+      .where(eq(breakNotificationsTable.id, input.id))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      throw new Error(`Notification with id ${input.id} not found`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('Notification dismissal failed:', error);
+    throw error;
+  }
 };

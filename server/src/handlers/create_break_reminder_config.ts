@@ -1,17 +1,25 @@
 
+import { db } from '../db';
+import { breakReminderConfigsTable } from '../db/schema';
 import { type CreateBreakReminderConfigInput, type BreakReminderConfig } from '../schema';
 
 export const createBreakReminderConfig = async (input: CreateBreakReminderConfigInput): Promise<BreakReminderConfig> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new break reminder configuration for a user,
-    // persisting it in the database. It should handle cases where user already has a config
-    // (either update existing or create new based on business logic).
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Insert break reminder config record
+    const result = await db.insert(breakReminderConfigsTable)
+      .values({
         user_id: input.user_id,
-        interval_minutes: input.interval_minutes || 60,
-        is_active: input.is_active !== undefined ? input.is_active : true,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as BreakReminderConfig);
+        interval_minutes: input.interval_minutes, // Already has default from Zod schema
+        is_active: input.is_active // Already has default from Zod schema
+      })
+      .returning()
+      .execute();
+
+    // Return the created config
+    const config = result[0];
+    return config;
+  } catch (error) {
+    console.error('Break reminder config creation failed:', error);
+    throw error;
+  }
 };
